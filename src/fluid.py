@@ -288,10 +288,10 @@ class HelloWorld(mglw.WindowConfig):
 			                    "horizontal" forces the quantity to be antisymmetric at the left and right boundaries
 		'''
 		# TODO: Step 2: Complete this function
-		q[0,:] = -q[1,:] if boundary_type == "vertical" else q[1, :]  # Top row
-		q[-1,:] = -q[-2,:] if boundary_type == "vertical" else q[-2, :]  # Bottom row
-		q[:,0] = -q[:,1] if boundary_type == "horizontal" else q[:,1]  # Leftmost column
-		q[:,-1] = -q[:,-2] if boundary_type == "horizontal" else q[:,-2]  # Rightmost column
+		q[0,:] = -q[1,:] if boundary_type == "vertical" else q[1, :]		# Top row
+		q[-1,:] = -q[-2,:] if boundary_type == "vertical" else q[-2, :]		# Bottom row
+		q[:,0] = -q[:,1] if boundary_type == "horizontal" else q[:,1]		# Leftmost column
+		q[:,-1] = -q[:,-2] if boundary_type == "horizontal" else q[:,-2]	# Rightmost column
 		
 		# Set corners to the average of their 2 neighbours
 		q[0,0] = 0.5 * (q[0,1] + q[1,0])
@@ -304,45 +304,16 @@ class HelloWorld(mglw.WindowConfig):
 	def advect_particles(self, dt):
 		''' Advects particles using the current grid velocities. '''
 		# TODO: STEP 1: Complete this function
-		# Loop over each particle in the grid
-		for p in range(self.particles.shape[0]):
+		for p in range(self.particles.shape[0]):  # Loop over each particle in the grid
 			i, j, a, b = self.xy_to_ij(*self.particles[p])
-			'''
-			# Get 4 nearest cells' velocities (4 cases)
-			if b < 0.5:  # Bottom half of cell
-				if a < 0.5:  # Bottom-left
-					v11 = self.curr_v[i-1,j-1]	# SW cell
-					v12 = self.curr_v[i,j-1]	# NW cell
-					v21 = self.curr_v[i-1,j]	# SE cell
-					v22 = self.curr_v[i,j]		# NE cell <-- current cell
-				else:  # Bottom-right
-					v11 = self.curr_v[i-1,j]	# SW cell
-					v12 = self.curr_v[i,j]		# NW cell <-- current cell
-					v21 = self.curr_v[i-1,j+1]	# SE cell
-					v22 = self.curr_v[i,j+1]	# NE cell
-			else:  # Top half of cell
-				if a < 0.5:  # Top-left
-					v11 = self.curr_v[i,j-1]	# SW cell
-					v12 = self.curr_v[i+1,j-1]	# NW cell
-					v21 = self.curr_v[i,j]		# SE cell <-- current cell
-					v22 = self.curr_v[i+1,j]	# NE cell
-				else:  # Top-right
-					v11 = self.curr_v[i,j]		# SW cell <-- current cell
-					v12 = self.curr_v[i+1,j]	# NW cell
-					v21 = self.curr_v[i,j+1]	# SE cell
-					v22 = self.curr_v[i+1,j+1]	# NE cell
 			
-			# Calculate new interpolation "weights" across the 4 cells
-			A = a + 0.5 if a < 0.5 else a - 0.5
-			B = b + 0.5 if b < 0.5 else b - 0.5
-			'''
-			
-			# Calculate velocity of particle, and perform forward step 
-			# v = v11*(1-A)*(1-B) + v12*(1-A)*B + v21*A*(1-B) + v22*A*B
+			# Calculate velocity of particle
 			v = (self.curr_v[i,j]*(1-a)*(1-b) +
 				 self.curr_v[i+1,j]*(1-a)*b +
 				 self.curr_v[i,j+1]*a*(1-b) +
 				 self.curr_v[i+1,j+1]*a*b)
+			
+			# Perform forward step, and clip
 			new_pos = self.particles[p] + dt * v
 			self.particles[p] = np.clip(new_pos,[self.xl, self.yl],[self.xh, self.yh])
 		
@@ -360,9 +331,10 @@ class HelloWorld(mglw.WindowConfig):
 		'''
 		# TODO: STEP 4: Complete this function
 		q = np.zeros_like(q0)
+		
+		# Perform a linear backtrace, as in Stam's GDC 2003 paper
 		dt0x, dt0y = dt * self.nx, dt * self.ny
 		
-		# q[row, col]	gv[row, col, x|y]
 		for i in range(1, self.ny+1):
 			for j in range(1, self.nx+1):
 				x = j - dt0x * gv[i,j,0]
@@ -371,16 +343,12 @@ class HelloWorld(mglw.WindowConfig):
 				x = np.clip(x, 0.5, self.nx + 0.5)
 				y = np.clip(y, 0.5, self.ny + 0.5)
 
-				i0, j0 = int(y), int(x)
+				i0, j0 = int(y), int(x)  # Integral parts of y and x
 				i1, j1 = i0 + 1, j0 + 1
-				s1, t1 =  y - i0, x - j0
+				s1, t1 =  y - i0, x - j0  # Fractional parts of y and x
 				s0, t0 = 1 - s1, 1 - t1
 
-				# print(f"i={i}, x={x}, i0={i0}, i1={i1}, s1={s1}, s0={s0}")
-				# print(f"j={j}, y={y}, j0={j0}, j1={j1}, t1={t1}, t0={t0}\n")
-
-				q[i,j] = (s0 * (t0 * q0[i0,j0] + t1 * q0[i0,j1]) +
-						  s1 * (t0 * q0[i1,j0] + t1 * q0[i1,j1]))
+				q[i,j] = s0 * (t0 * q0[i0,j0] + t1 * q0[i0,j1]) + s1 * (t0 * q0[i1,j0] + t1 * q0[i1,j1])
 				
 		return self.set_boundary(q, boundary_type)
 
@@ -403,7 +371,7 @@ class HelloWorld(mglw.WindowConfig):
 		'''Applies the buoyancy force to the velocity field.'''
 		# TODO: STEP 8: Complete this function
 		mean_tp = np.mean(self.curr_tp)
-		self.curr_v[:,:,1] += self.beta * dt * (self.curr_tp - mean_tp) 
+		self.curr_v[:,:,1] += self.beta * dt * (self.curr_tp - mean_tp)
 		self.curr_v[:,:,1] = self.set_boundary(self.curr_v[:,:,1], "vertical")
 		
 
@@ -426,29 +394,29 @@ class HelloWorld(mglw.WindowConfig):
 	def project(self):
 		'''Solves the pressure Poisson equation to make the velocity field divergence free.'''
 		# TODO: STEP 6: Complete this function
+		# Possion solve, as in Stam's GDC 2003 paper
 		hx, hy = 1 / self.nx, 1 / self.ny
 		div = np.zeros_like(self.curr_tp)
 		p = np.zeros_like(self.curr_tp)
 		
-		for i in range(1, self.nx+1):
-			for j in range(1, self.ny+1):
-				div[j,i] = -0.5 * (hx * (self.curr_v[j,i+1,0] - self.curr_v[j,i-1,0]) +
-								   hy * (self.curr_v[j+1,i,1] - self.curr_v[j-1,i,1]))
-				# p[j,i] = 0
+		for i in range(1, self.ny+1):
+			for j in range(1, self.nx+1):
+				div[i,j] = -0.5 * (hx * (self.curr_v[i,j+1,0] - self.curr_v[i,j-1,0]) +
+								   hy * (self.curr_v[i+1,j,1] - self.curr_v[i-1,j,1]))
 
 		div = self.set_boundary(div, None)
 		p = self.set_boundary(p, None)
 		
 		for k in range(self.iterations):
-			for i in range(1, self.nx+1):
-				for j in range(1, self.ny+1):
-					p[j,i] = (div[j,i] + p[j,i-1] + p[j,i+1] + p[j-1,i] + p[j+1,i]) / 4
+			for i in range(1, self.ny+1):
+				for j in range(1, self.nx+1):
+					p[i,j] = (div[i,j] + p[i,j-1] + p[i,j+1] + p[i-1,j] + p[i+1,j]) / 4
 			p = self.set_boundary(p, None)
 
-		for i in range(1, self.nx+1):
-			for j in range(1, self.ny+1):
-				self.curr_v[j,i,0] -= 0.5 * (p[j,i+1] - p[j,i-1]) / hx
-				self.curr_v[j,i,1] -= 0.5 * (p[j+1,i] - p[j-1,i]) / hy
+		for i in range(1, self.ny+1):
+			for j in range(1, self.nx+1):
+				self.curr_v[i,j,0] -= 0.5 * (p[i,j+1] - p[i,j-1]) / hx
+				self.curr_v[i,j,1] -= 0.5 * (p[i+1,j] - p[i-1,j]) / hy
 
 		self.curr_v[:,:,0] = self.set_boundary(self.curr_v[:,:,0], "horizontal")
 		self.curr_v[:,:,1] = self.set_boundary(self.curr_v[:,:,1], "vertical")
