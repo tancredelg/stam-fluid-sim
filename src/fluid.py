@@ -25,7 +25,7 @@ class HelloWorld(mglw.WindowConfig):
 	Note that the velocities are stored at the centers of the cells.
 	The spatial limits of the domain are given by xl xh yl yh.
 	'''
-	
+
 	nx = 32 # TODO: Change the resolution to different sizes in testing!
 	ny = 16
 
@@ -45,8 +45,8 @@ class HelloWorld(mglw.WindowConfig):
 	yh =  1.0
 	dy = 2.0/ny
 	dx = dy
-	xl = -dx*nx/2.0 
-	xh =  dx*nx/2.0 
+	xl = -dx*nx/2.0
+	xh =  dx*nx/2.0
 
 	draw_grid_enabled = True
 	draw_grid_lines_enabled = True
@@ -58,14 +58,14 @@ class HelloWorld(mglw.WindowConfig):
 	num_particles = 5000
 
 	iterations = 32	    # number of Gauss-Seidel solver iterations
-	
+
 	dt = 0.1			# time step (control with up and down arrows)
 	viscosity = 0.00001 # viscosity of fluid (diffuision of velocities) (control with 1 and 2 keys)
 	kappa = 0.00001	    # thermal diffusivity (control with 3 and 4 keys)
 	beta = 0.05         # buoyancy force control (control with 5 and 6 keys)
 
 	def __init__(self, **kwargs):
-		super().__init__(**kwargs)  
+		super().__init__(**kwargs)
 		self.ctx.enable(mgl.BLEND)
 		self.ctx.blend_func = mgl.SRC_ALPHA, mgl.ONE_MINUS_SRC_ALPHA
 		self.prog = self.ctx.program( vertex_shader = open('glsl/vert.glsl').read(), fragment_shader = open('glsl/frag.glsl').read() )
@@ -74,7 +74,7 @@ class HelloWorld(mglw.WindowConfig):
 		self.MVP = glm.ortho( self.xl-self.dx*2, self.xh+self.dx*2, self.yl-self.dy*2, self.yh+self.dy*2, -1, 1)
 		self.prog['MVP'].write( self.MVP )
 		self.prog2['MVP'].write( self.MVP )
-		self.star_vao = self.load_scene("star.obj").root_nodes[0].mesh.vao.instance(self.prog2) 
+		self.star_vao = self.load_scene("star.obj").root_nodes[0].mesh.vao.instance(self.prog2)
 		self.reset()
 		self.setup_grid_lines()
 		self.setup_velocity_lines()
@@ -111,14 +111,14 @@ class HelloWorld(mglw.WindowConfig):
 		indices2 = np.column_stack((ind[i, j + 1].flatten(), ind[i + 1, j + 1].flatten(), ind[i + 1, j].flatten()))
 		indices = np.concatenate( (indices1, indices2), axis=0 )
 		vbo_pos = self.ctx.buffer(vertices.astype('f4').tobytes())
-		self.vbo_col = self.ctx.buffer(np.zeros((x.size,4)).astype('f4').tobytes())	
-		ibo = self.ctx.buffer(indices.astype("i4").tobytes())	
+		self.vbo_col = self.ctx.buffer(np.zeros((x.size,4)).astype('f4').tobytes())
+		ibo = self.ctx.buffer(indices.astype("i4").tobytes())
 		self.grid_vao = self.ctx.vertex_array( self.prog,
-			[ (vbo_pos, '2f', 'in_position'), (self.vbo_col, '4f', 'in_colour') ], index_buffer=ibo, mode=mgl.TRIANGLES )
+											   [ (vbo_pos, '2f', 'in_position'), (self.vbo_col, '4f', 'in_colour') ], index_buffer=ibo, mode=mgl.TRIANGLES )
 
 	def draw_color_mesh(self):
 		''' Updates the temperature mesh colours and draws it. '''
-		i,j,a,b = self.cg_i,self.cg_j,self.cg_a,self.cg_b 
+		i,j,a,b = self.cg_i,self.cg_j,self.cg_a,self.cg_b
 		## bilinear interpolation
 		value = (1-a)*(1-b)*self.curr_tp[i,j] + (1-a)*b*self.curr_tp[i+1,j] + a*(1-b)*self.curr_tp[i,j+1] + a*b*self.curr_tp[i+1,j+1]
 		colours = np.zeros((i.size,4), dtype='f4')
@@ -132,15 +132,15 @@ class HelloWorld(mglw.WindowConfig):
 		'''Create a vertex array with repeated mesh grid values for drawing velocity lines.'''
 		x = np.linspace( self.xl-0.5*self.dx, self.xh+0.5*self.dx, self.nx+2)
 		y = np.linspace( self.yl-0.5*self.dy, self.yh+0.5*self.dy, self.ny+2)
-		xg, yg = np.meshgrid(x,y)		
+		xg, yg = np.meshgrid(x,y)
 		self.vertices = np.zeros((xg.size*2,2), dtype='f4')  # *2 for center and center plus velocity
 		self.vertices[0::2,0] = xg.flatten()
 		self.vertices[0::2,1] = yg.flatten()
-		self.vertices[1::2,0] = xg.flatten() 
-		self.vertices[1::2,1] = yg.flatten() 
+		self.vertices[1::2,0] = xg.flatten()
+		self.vertices[1::2,1] = yg.flatten()
 		self.vbo = self.ctx.buffer( self.vertices.astype("f4").tobytes(),dynamic=True )
 		self.lines_vao = self.ctx.vertex_array(self.prog2, [(self.vbo, '2f', 'in_position')], mode=mgl.LINES)
-	
+
 	def draw_velocity_lines(self):
 		'''Draw velocities after updating the line segment enpoints in the dynamic draw vbo of positions'''
 		self.vertices[1::2,0] = self.vertices[0::2,0] + self.velocity_scale*self.curr_v[:,:,0].flatten()
@@ -159,7 +159,7 @@ class HelloWorld(mglw.WindowConfig):
 		self.reset_particles()
 		self.particle_vbo = self.ctx.buffer(self.particles.astype('f4').tobytes())
 		self.particle_vao = self.ctx.vertex_array(self.prog2, [(self.particle_vbo, '2f', 'in_position')], mode=mgl.POINTS)
-	
+
 	def draw_particles(self):
 		self.particle_vbo.write(self.particles.astype('f4').tobytes())
 		self.particle_vao.program['colour'] = (1, 1, 1, 1)
@@ -190,32 +190,32 @@ class HelloWorld(mglw.WindowConfig):
 
 	def key_event(self, key, action, modifiers):
 		if action == self.wnd.keys.ACTION_PRESS:
-			if key == self.wnd.keys.V: self.draw_velocity_enabled = not self.draw_velocity_enabled	
-			if key == self.wnd.keys.G: self.draw_grid_lines_enabled = not self.draw_grid_lines_enabled	
-			if key == self.wnd.keys.C: self.draw_grid_enabled = not self.draw_grid_enabled	
+			if key == self.wnd.keys.V: self.draw_velocity_enabled = not self.draw_velocity_enabled
+			if key == self.wnd.keys.G: self.draw_grid_lines_enabled = not self.draw_grid_lines_enabled
+			if key == self.wnd.keys.C: self.draw_grid_enabled = not self.draw_grid_enabled
 			if key == self.wnd.keys.P: self.reset_particles()
 			if key == self.wnd.keys.R: self.reset_request = True
-			if key == self.wnd.keys.S: self.step_request = True	
-			if key == self.wnd.keys.SPACE: self.running = not self.running	
+			if key == self.wnd.keys.S: self.step_request = True
+			if key == self.wnd.keys.SPACE: self.running = not self.running
 			if key == self.wnd.keys.ESCAPE: self.close()
 			if key == self.wnd.keys.LEFT: self.velocity_scale *= 0.5
 			if key == self.wnd.keys.RIGHT: self.velocity_scale *= 2.0
-			if key == self.wnd.keys.COMMA: 
+			if key == self.wnd.keys.COMMA:
 				self.iterations = np.clip(self.iterations/2, 2, 256).astype(int)
 				print("Iterations:", self.iterations)
-			if key == self.wnd.keys.PERIOD: 
+			if key == self.wnd.keys.PERIOD:
 				self.iterations = np.clip(self.iterations*2, 2, 256).astype(int)
 				print("Iterations:", self.iterations)
-			if key == self.wnd.keys.UP: 
+			if key == self.wnd.keys.UP:
 				self.dt *= 2.0
 				print("dt:", self.dt)
-			if key == self.wnd.keys.DOWN: 
+			if key == self.wnd.keys.DOWN:
 				self.dt *= 0.5
 				print("dt:", self.dt)
-			if key == self.wnd.keys.NUMBER_1: 
+			if key == self.wnd.keys.NUMBER_1:
 				self.viscosity *= 0.5
 				print("Viscosity:", self.viscosity)
-			if key == self.wnd.keys.NUMBER_2: 
+			if key == self.wnd.keys.NUMBER_2:
 				self.viscosity *= 2.0
 				print("Viscosity:", self.viscosity)
 			if key == self.wnd.keys.NUMBER_3:
@@ -232,7 +232,7 @@ class HelloWorld(mglw.WindowConfig):
 				print("Buoyancy force control:", self.beta)
 			if key == self.wnd.keys.DELETE:
 				self.sources = []
-				
+
 	def mouse_press_event(self, x, y, button):
 		xx, yy = self.mouse_to_xy(x, y)
 		if (xx < self.xl or xx > self.xh or yy < self.yl or yy > self.yh): return
@@ -270,13 +270,13 @@ class HelloWorld(mglw.WindowConfig):
 		# TODO: STEP 3: Complete this function
 		q = np.zeros_like(q0)
 		a = dt * kappa * self.nx * self.ny
-		
+
 		for k in range(self.iterations):
 			for i in range(1, self.ny+1):
 				for j in range(1, self.nx+1):
 					q[i,j] = (q0[i,j] + a * (q[i,j-1] + q[i,j+1] + q[i-1,j] + q[i+1,j])) / (1 + 4*a)
 			q = self.set_boundary(q, boundary_type)
-		
+
 		return q
 
 	def set_boundary(self, q, boundary_type):
@@ -292,7 +292,7 @@ class HelloWorld(mglw.WindowConfig):
 		q[-1,:] = -q[-2,:] if boundary_type == "vertical" else q[-2, :]		# Bottom row
 		q[:,0] = -q[:,1] if boundary_type == "horizontal" else q[:,1]		# Leftmost column
 		q[:,-1] = -q[:,-2] if boundary_type == "horizontal" else q[:,-2]	# Rightmost column
-		
+
 		# Set corners to the average of their 2 neighbours
 		q[0,0] = 0.5 * (q[0,1] + q[1,0])
 		q[0,-1] = 0.5 * (q[0,-2] + q[1,-1])
@@ -306,17 +306,17 @@ class HelloWorld(mglw.WindowConfig):
 		# TODO: STEP 1: Complete this function
 		for p in range(self.particles.shape[0]):  # Loop over each particle in the grid
 			i, j, a, b = self.xy_to_ij(*self.particles[p])
-			
+
 			# Calculate velocity of particle
 			v = (self.curr_v[i,j]*(1-a)*(1-b) +
 				 self.curr_v[i+1,j]*(1-a)*b +
 				 self.curr_v[i,j+1]*a*(1-b) +
 				 self.curr_v[i+1,j+1]*a*b)
-			
+
 			# Perform forward step, and clip
 			new_pos = self.particles[p] + dt * v
 			self.particles[p] = np.clip(new_pos,[self.xl, self.yl],[self.xh, self.yh])
-		
+
 		return
 
 	def advect(self, q0, dt, gv, boundary_type):
@@ -331,15 +331,15 @@ class HelloWorld(mglw.WindowConfig):
 		'''
 		# TODO: STEP 4: Complete this function
 		q = np.zeros_like(q0)
-		
+
 		# Perform a linear backtrace, as in Stam's GDC 2003 paper
 		dt0x, dt0y = dt * self.nx, dt * self.ny
-		
+
 		for i in range(1, self.ny+1):
 			for j in range(1, self.nx+1):
 				x = j - dt0x * gv[i,j,0]
 				y = i - dt0y * gv[i,j,1]
-				
+
 				x = np.clip(x, 0.5, self.nx + 0.5)
 				y = np.clip(y, 0.5, self.ny + 0.5)
 
@@ -349,12 +349,12 @@ class HelloWorld(mglw.WindowConfig):
 				s0, t0 = 1 - s1, 1 - t1
 
 				q[i,j] = s0 * (t0 * q0[i0,j0] + t1 * q0[i0,j1]) + s1 * (t0 * q0[i1,j0] + t1 * q0[i1,j1])
-				
+
 		return self.set_boundary(q, boundary_type)
 
 	def step(self, dt):
 		self.add_source_temperature(dt)
-		self.apply_temperature_force(dt)        
+		self.apply_temperature_force(dt)
 		self.velocity_step(dt)
 		self.scalar_step(dt)
 		self.advect_particles(dt)
@@ -373,7 +373,7 @@ class HelloWorld(mglw.WindowConfig):
 		mean_tp = np.mean(self.curr_tp)
 		self.curr_v[:,:,1] += self.beta * dt * (self.curr_tp - mean_tp)
 		self.curr_v[:,:,1] = self.set_boundary(self.curr_v[:,:,1], "vertical")
-		
+
 
 	def scalar_step(self, dt):
 		# TODO: STEP 5: Complete this function with a call to the diffuse and advect functions
@@ -398,7 +398,7 @@ class HelloWorld(mglw.WindowConfig):
 		hx, hy = 1 / self.nx, 1 / self.ny
 		div = np.zeros_like(self.curr_tp)
 		p = np.zeros_like(self.curr_tp)
-		
+
 		for i in range(1, self.ny+1):
 			for j in range(1, self.nx+1):
 				div[i,j] = -0.5 * (hx * (self.curr_v[i,j+1,0] - self.curr_v[i,j-1,0]) +
@@ -406,7 +406,7 @@ class HelloWorld(mglw.WindowConfig):
 
 		div = self.set_boundary(div, None)
 		p = self.set_boundary(p, None)
-		
+
 		for k in range(self.iterations):
 			for i in range(1, self.ny+1):
 				for j in range(1, self.nx+1):
@@ -420,19 +420,19 @@ class HelloWorld(mglw.WindowConfig):
 
 		self.curr_v[:,:,0] = self.set_boundary(self.curr_v[:,:,0], "horizontal")
 		self.curr_v[:,:,1] = self.set_boundary(self.curr_v[:,:,1], "vertical")
-	
-	def render(self, time, frame_time):	
+
+	def render(self, time, frame_time):
 		self.ctx.clear(0,0,0)
 		if self.reset_request:
 			self.reset_request = False
 			self.reset()
 		if self.running or self.step_request:
 			self.step_request = False
-			self.step(self.dt)		
-		if self.draw_grid_enabled: 
+			self.step(self.dt)
+		if self.draw_grid_enabled:
 			self.draw_color_mesh()
 		if self.draw_velocity_enabled: self.draw_velocity_lines()
-		if self.draw_grid_lines_enabled: 
+		if self.draw_grid_lines_enabled:
 			self.grid_lines_vao.program['colour'] = (0.5, 0.5, 0.5, 0.25)
 			self.grid_lines_vao.render()
 		self.domain_box_vao.program['colour'] = (1, 1, 1, 1)
@@ -441,7 +441,7 @@ class HelloWorld(mglw.WindowConfig):
 		for source in self.sources:
 			self.prog2['colour'] = source.colour
 			self.prog2['offset'] = (source.x, source.y)
-			self.prog2['scale'] = (self.dx/4, self.dy/4)	
+			self.prog2['scale'] = (self.dx/4, self.dy/4)
 			self.star_vao.render()
 		self.prog2['offset'] = (0,0) # reset to identity
 		self.prog2['scale'] = (1,1)	# reset to identity	    
